@@ -1,0 +1,28 @@
+#!/bin/bash
+path="/usr/local/nginx/conf"
+log="/root/auto_nginx_proxy.log"
+touch /root/auto_nginx_proxy.log
+
+#源码安装nginx
+useradd -s /sbin/nologin nginx  2> $log
+tar -xf ~/nginx-1.12.2.tar.gz 2> $log
+cd nginx-1.12.2 2> $log
+./configure  --user=nginx --group=nginx --with-http_ssl_module --with-http_stub_status_module  2> $log
+
+make && make install  2> $log
+chown -R nginx.nginx /usr/local/nginx     2> $log                                     
+
+
+yum -y install memcached
+systemctl start memcached.service
+
+sed -i '43a            proxy_pass  http://webs;' $path/nginx.conf  2> $log
+
+sed -i '/#gzip/a\
+         upstream webs { \
+         server 192.168.239.201:80 weight=3 max_fails=1 fail_timeout=30; \
+         server 192.168.239.202:80 weight=3 max_fails=1 fail_timeout=30; \
+
+ }' $path/nginx.conf  2> $log
+
+/usr/local/nginx/sbin/nginx                  2> $log

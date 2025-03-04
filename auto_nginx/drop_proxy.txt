@@ -1,0 +1,5 @@
+#!/bin/bash
+yum -y remove memcached
+rm -rf /root/nginx-1.12.2
+/usr/local/nginx/sbin/nginx -s stop 
+rm -rf /usr/local/nginx/

@@ -1,0 +1,42 @@
+#!/bin/bash
+path="/usr/local/nginx/conf"
+log="/root/auto_optimize.log"
+touch /root/auto_optimize.log
+#-----------------------------优化并发量----------------------------------
+#nginx进程数量    
+sed -i 's/worker_processes  1; /worker_processes 2;/' $path/nginx.conf  2> $log#提高进程处理连接数量
+sed -i 's/    worker_connections  1024;/worker_connections 65535;/' $path/nginx.conf  2> $log
+#内核对文件的限制
+ulimit -Hn 100000  2> $log
+ulimit -Sn 100000  2> $log
+sed -i '$a\
+*      soft  nofile  100000 \
+*      hard  nofile  100000 \
+' /etc/security/limits.conf  2> $log
+#---------------------------优化报头&缓存--------------------------
+#优化报头
+sed -i '/#gzip/a\
+    client_header_buffer_size   1k; \
+    large_client_header_buffers  4 4k;' $path/nginx.conf  2> $log
+#服务器缓存时间
+sed -i '/#charset/a\
+location ~* \\.(jpg|jpeg|gif|png|css|js|ico|xml)$ { \
+	expires    30d; \
+ }' $path/nginx.conf  2> $log
+
+
+#---------------------------压缩特定文件---------------------------
+sed -i '/#gzip/a\
+	gzip on; \
+	gzip_min_length 1000; \
+	gzip_comp_level 4; \
+	gzip_types text/plain text/css application/json application/x-javascript ;' $path/nginx.conf  2> $log
+
+#---------------------------优化服务器内存缓存---------------------------
+sed -i '/#gzip/a\
+	open_file_cache   max=2000 inactive=20s; \
+	open_file_cache_valid  60s; \
+	open_file_cache_min_uses 5; \
+	open_file_cache_errors  off;' $path/nginx.conf  2> $log
+
+/usr/local/nginx/sbin/nginx -s reload   2> $log

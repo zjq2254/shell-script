@@ -1,0 +1,9 @@
+#!/bin/bash
+yum -y remove memcached
+yum -y remove mariadb mariadb-server mariadb-devel 
+yum -y remove php php-fpm php-mysql php-pecl-memcached 
+rm -rf /root/nginx-1.12.2
+/usr/local/nginx/sbin/nginx -s stop 
+rm -rf /usr/local/nginx/
+sed -i '/100000/d' /etc/security/limits.conf
+

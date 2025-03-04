@@ -1,0 +1,6 @@
+#!/bin/bash
+date=`date +%Y%m%d`
+logpath=/usr/local/nginx/logs
+mv $logpath/access.log $logpath/access.log-$date
+mv $logpath/error.log $logpath/error.log-$date
+kill -USR1 $(cat $logpath/nginx.pid)

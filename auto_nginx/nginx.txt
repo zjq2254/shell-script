@@ -1,0 +1,38 @@
+#!/bin/bash
+path="/usr/local/nginx/conf"
+log="/root/auto_nginx.log"
+touch /root/auto_nginx.log
+
+yum -y install gcc
+
+#源码安装nginx
+useradd -s /sbin/nologin nginx
+tar -xf ~/nginx-1.12.2.tar.gz
+cd nginx-1.12.2
+./configure  --user=nginx --group=nginx --with-http_ssl_module --with-http_stub_status_module  2> $log
+make && make install  2> $log
+chown -R nginx.nginx /usr/local/nginx     2> $log                                     
+/usr/local/nginx/sbin/nginx                  2> $log
+#lnmp
+yum -y install mariadb mariadb-server mariadb-devel 2> $log
+yum -y install php php-fpm php-mysql php-pecl-memcached 2> $log
+#动静分离，连接memcached数据库
+sed -i '65,71s/#//' $path/nginx.conf 2> $log
+sed -i '/SCRIPT_FILENAM/d' $path/nginx.conf 2> $log
+sed -i 's/fastcgi_params/fastcgi.conf/' $path/nginx.conf 2> $log
+sed -i 's/handler] = files/handler] = memcached/' /etc/php-fpm.d/www.conf 2> $log
+sed -i 's/\/var\/lib\/php\/session/"tcp:\/\/192.168.239.203:11211"/' /etc/php-fpm.d/www.conf 2> $log
+#状态页
+sed -i '/#error_page  404/a\
+        location /status { \
+            stub_status on; \
+            allow 192.168.239.202; \
+            deny all; \
+         }' $path/nginx.conf 2> $log
+
+#启动
+systemctl start mariadb
+systemctl start php-fpm
+/usr/local/nginx/sbin/nginx -s reload 2> $log
+
+
